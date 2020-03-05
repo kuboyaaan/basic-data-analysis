@@ -40,7 +40,7 @@ pd.set_option('max_rows', 100)
 ##### 読み込み
 `df = read_csv('file_path', dtype={'カラム名': データ型, ...})`
 ##### 表示
-`df.head()`
+`df.head()`<br>
 `df.tail()`
 ##### 何を使って、何を予測するか
 
@@ -85,7 +85,9 @@ pd.set_option('max_rows', 100)
 - 時系列での傾向あるか
 
 ##### 相間あるかどうなのか
-df['カラム名'].corr
+`corr = df['カラム名'].corr`
+- ちなみに可視化はこんな感じ
+`sns.heatmap(corr)`
 
 ### Feature Engineering
 
