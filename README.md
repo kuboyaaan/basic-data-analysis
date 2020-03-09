@@ -81,21 +81,58 @@ pd.set_option('max_rows', 100)
 `np.log1p(df['カラム名']).hist()`
 
 ##### 数値変数
-- GBDTだったらそのままでも
+- GBDTだったらそのままでOK
+大小関係のみ影響（数値間の幅はあまり関係がない）
 
 - NNだったら標準化（対象の変数を0~1の範囲に変換）必須
 ```
 from sklearn.preprocessing import MinMaxScale
 scaler = MinMaxScaler()
 scaler.fit(data)
-sclaer.transform(data)
+scaler.transform(data)
+scaler.fit_transform(data)
 ...
 ```
 
-- 正規化
+- 正規化（平均0、分散1に変換）
+
+```
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+scaler.fit(data)
+scaler.transform(data)
+scaler.fit_transform(data)
+...
+```
+
+- その他
+外れ値を無視するRobustScaler(`from sklearn.preprocessing import RobustScaler`)<br>
+個々のデータポイントをそれぞれ異なるスケール変換するNormalizer(`from sklearn.preprocessing import Normalizer`)<br>
 
 ##### カテゴリ特徴の確認
+文字列のままでは、処理を行なっていくことができないので、数値に変換する<br>
 - ラベルエンコーディング
+文字列を数値に変換<br>
+```
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+df['encoded_カラム名'] = le.fit(df['カラム名'].values)
+
+# 元に戻したいときは
+df['decoded_カラム名'] = le.inverse_transform(df['encoded_カラム名'])
+```
+
+- OneHotエンコーディング
+```
+from sklearn.preprocessing import OneHotEncoder
+# handle_unknown='ignore'で不明なカテゴリが生じたとき、無視される
+oh = OneHotEncoder(handle_unknown='ignore')
+oh.fit(df['カラム名'])
+oh.transform(df['カラム名'])
+oh.fit_transform(df['カラム名'])
+...
+```
+
 - ターゲットエンコーディング
 - ...
 
