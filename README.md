@@ -1,5 +1,8 @@
 ## What is this
-データ分析のフローについて書いてみる
+データ分析のフローについて整理する用
+[nejumiさんのkaggle_memo](https://github.com/nejumi/kaggle_memo)<br>
+[amatoneさんのkaggle_memo](https://github.com/amaotone/kaggle-memo)
+
 
 ## Folder structure and About File
 ```
@@ -20,6 +23,7 @@
 
 ## 分析フロー
 ### 大前提
+ライブラリとか
 ```
 使用するライブラリ
 import numpy as np
@@ -42,6 +46,7 @@ pd.set_option('max_rows', 100)
 ##### 表示
 `df.head()`<br>
 `df.tail()`
+
 ##### 何を使って、何を予測するか
 
 
@@ -58,31 +63,46 @@ pd.set_option('max_rows', 100)
 - 欠損ではない要素の数の確認
 `df.info()`
 - 全体のレコードのうち有効数の割合を計算
-→欠損の割合もわかる
+    →欠損の割合もわかる
 `df.count()/len(df)`
 
 ##### 要約統計量
 - 平均分散最大最小四分位数などそこらへん
-- 異常値と考えられるものを含むかどうか除去するかどうか
+    →異常値などを削除するかどうかの判断材料にもなる
 `df.describe()`
-- 四分位数じゃ物足りない
+- 四分位数じゃ物足りないときは'percentiles'
 `df.describe(percentiles=[0.1, 0.2, ..., 0.9])`
 
 ##### データの分布
 - 正規分布？歪な分布？
-
+`df['カラム名'].hist()`
 - 対数変換かましてみる（要注意）
-[Log-transform and its implications for data analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4120293/)
+[Log-transform and its implications for data analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4120293/)<br>
+`np.log1p(df['カラム名']).hist()`
 
 ##### 数値変数
-- GBDTだったらそのままで
-- NNだったら標準化
+- GBDTだったらそのままでも
+
+- NNだったら標準化（対象の変数を0~1の範囲に変換）必須
+```
+from sklearn.preprocessing import MinMaxScale
+scaler = MinMaxScaler()
+scaler.fit(data)
+sclaer.transform(data)
+...
+```
+
+- 正規化
 
 ##### カテゴリ特徴の確認
-- そのままでは使えない。変換してみる
+- ラベルエンコーディング
+- ターゲットエンコーディング
+- ...
+
 
 ##### 時系列データの確認
 - 時系列での傾向あるか
+
 
 ##### 相間あるかどうなのか
 `corr = df['カラム名'].corr`
@@ -93,14 +113,34 @@ pd.set_option('max_rows', 100)
 
 
 #### 欠損値
-#### 結合
-#### 
+- 欠損値の削除
+`df.dropna(how='(all: 全ての欠損の行または列が削除, any: どれか１つでも欠損があれば削除)', axis=(0: 行, 1: 列))`
+- 欠損値を補間
+`df.fillna(df.['カラム名'].mean())`: 平均値で補間<br>
+`df.fillna(df.['カラム名'].median())`: 中央値で補間<br>
+`df.fillna(df.['カラム名'].mode())`: 最頻値で補間<br>
+
+#### 集約
+
 
 ### Modeling
 #### とりあえず突っ込む
 #### validationはどうするか
+- 単純に分割
+
+- hold out
+
+- leave one out
+##### Cross Validatoin
+- KFold
+- GroupKFold
+- StratifiedKFold
+
+
 #### cvの確認
+
 #### 決定木系は重要度
+
 #### 
 
 
