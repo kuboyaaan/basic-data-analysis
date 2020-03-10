@@ -164,7 +164,25 @@ oh.fit_transform(df['カラム名'])
 上記2通り方法があるが、形式が異なるので、場面場面によって使い分けが必要
 
 ### Modeling
+- LightGBM
+```
+import lightgbm as lgb
+```
+- XGBoost
+```
+import xgboost as xgb
+```
+- CatBoost
+```
+import catboost as catb
+```
+- NN
+```
+
+```
+
 #### とりあえず突っ込む
+
 #### validationはどうするか
 ##### Holdout
 - 単純に分割
