@@ -56,35 +56,35 @@ pd.set_option('max_rows', 100)
 
 #### データの概要を掴む
 ##### データの型
-- 扱うデータ・各カラムはどんな型？
-`df.info()` or `df.dtypes()`
+- 扱うデータ・各カラムはどんな型？<br>
+`df.info()` or `df.dtypes()`<br>
 
 ##### 欠損あるか
-- 欠損ではない要素の数の確認
-`df.info()`
-- 全体のレコードのうち有効数の割合を計算
-    →欠損の割合もわかる
-`df.count()/len(df)`
+- 欠損ではない要素の数の確認<br>
+`df.info()`<br>
+- 全体のレコードのうち有効数の割合を計算<br>
+    →欠損の割合もわかる<br>
+`df.count()/len(df)`<br>
 
 ##### 要約統計量
-- 平均分散最大最小四分位数などそこらへん
-    →異常値などを削除するかどうかの判断材料にもなる
-`df.describe()`
-- 四分位数じゃ物足りないときは'percentiles'
+- 平均分散最大最小四分位数などそこらへん<br>
+    →異常値などを削除するかどうかの判断材料にもなる<br>
+`df.describe()`<br>
+- 四分位数じゃ物足りないときは'percentiles'<br>
 `df.describe(percentiles=[0.1, 0.2, ..., 0.9])`
 
 ##### データの分布
-- 正規分布？歪な分布？
-`df['カラム名'].hist()`
-- 対数変換かましてみる（要注意）
+- 正規分布？歪な分布？<br>
+`df['カラム名'].hist()`<br>
+- 対数変換かましてみる（要注意）<br>
 [Log-transform and its implications for data analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4120293/)<br>
-`np.log1p(df['カラム名']).hist()`
+`np.log1p(df['カラム名']).hist()`<br>
 
 ##### 数値変数
-- GBDTだったらそのままでOK
-大小関係のみ影響（数値間の幅はあまり関係がない）
+- GBDTだったらそのままでOK<br>
+大小関係のみ影響（数値間の幅はあまり関係がない）<br>
 
-- NNだったら標準化（対象の変数を0~1の範囲に変換）必須
+- NNだったら標準化（対象の変数を0~1の範囲に変換）必須<br>
 ```
 from sklearn.preprocessing import MinMaxScale
 scaler = MinMaxScaler()
@@ -111,7 +111,7 @@ scaler.fit_transform(data)
 
 ##### カテゴリ特徴の確認
 文字列のままでは、処理を行なっていくことができないので、数値に変換する<br>
-- ラベルエンコーディング
+- ラベルエンコーディング<br>
 文字列を数値に変換<br>
 ```
 from sklearn.preprocessing import LabelEncoder
@@ -142,46 +142,58 @@ oh.fit_transform(df['カラム名'])
 
 
 ##### 相間あるかどうなのか
-`corr = df['カラム名'].corr`
-- ちなみに可視化はこんな感じ
-`sns.heatmap(corr)`
+`corr = df['カラム名'].corr`<br>
+- ちなみに可視化はこんな感じ<br>
+`sns.heatmap(corr)`<br>
 
 ### Feature Engineering
 
 
 #### 欠損値
-- 欠損値の削除
-`df.dropna(how='(all: 全ての欠損の行または列が削除, any: どれか１つでも欠損があれば削除)', axis=(0: 行, 1: 列))`
-- 欠損値を補間
+- 欠損値の削除<br>
+`df.dropna(how='(all: 全ての欠損の行または列が削除, any: どれか１つでも欠損があれば削除)', axis=(0: 行, 1: 列))`<br>
+- 欠損値を補間<br>
 `df.fillna(df.['カラム名'].mean())`: 平均値で補間<br>
 `df.fillna(df.['カラム名'].median())`: 中央値で補間<br>
 `df.fillna(df.['カラム名'].mode())`: 最頻値で補間<br>
 
 #### 集約
-- 'group'カラムの値ごとの'value'カラムの平均を計算する場合
+- 'group'カラムの値ごとの'value'カラムの平均を計算する場合<br>
 `df.groupby('group')['value'].mean()` <br>
 `df.groupby('group').['value'].agg(['mean])`<br>
-上記2通り方法があるが、形式が異なるので、場面場面によって使い分けが必要
+上記2通り方法があるが、形式が異なるので、場面場面によって使い分けが必要<br>あ
 
 ### Modeling
 - LightGBM
 ```
 import lightgbm as lgb
+
+dtrain ＝lgb.Dataset(train_df['features'], train_df['target'])
+dvalid = lgb.Dataset(valid_df['features'], valid_df['target'])
+dtest = lgb.Dataset(test_df['features'])
+
+model = lgb.train(params, dtrain, valid_sets=(dtrain, dvalid), num_boost_round=, early_stopping_rounds=, verbose_eval=, ...)
+pred = model.predict(dtest, ...)
 ```
 - XGBoost
 ```
 import xgboost as xgb
+
+dtrain = xgb.DMatrix(train_df['features'], train_df['target'])
+dvalid = xgb.DMatrix(valid_df['features'], valid_df['target'])
+dtest = xgb.DMatrix(test_df['features'])
+
+watchlist = [(dtrain, 'train'), (dvalid, 'eval')]
+model = xgb.train(params, dtrain, num_round, evals=watchlist)
+pred = model.predict(dtest)
 ```
+パラメータについては[こちらのQiita](https://qiita.com/FJyusk56/items/0649f4362587261bd57a)がわかりやすい
+
+その他
 - CatBoost
-```
-import catboost as catb
-```
 - NN
-```
+など
 
-```
-
-#### とりあえず突っ込む
 
 #### validationはどうするか
 ##### Holdout
@@ -257,7 +269,15 @@ for train_ind, valid_ind in loo.split(X):
 #### cvの確認
 
 #### 決定木系は重要度
+- lightGBM
+```
+lgb.plot_importance(model, ...)
+```
 
+- xgbBoost
+```
+xgb.plot_importance(model)
+```
 #### 
 
 
