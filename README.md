@@ -139,7 +139,19 @@ oh.fit_transform(df['カラム名'])
 
 ##### 時系列データの確認
 - 時系列での傾向あるか
+```
+# 可視化例
+# datetimeカラムに時系列情報（時間など）があるとする
 
+import matplotlib.pyplot as plt
+import matplotlib
+
+fig, ax = plt.subplots(figsize=(15, 8))
+dates = matplotlib.dates.date2num(df.loc[:, 'datetime'])
+ax.plot_date(dates, df.loc[:, 'feature1'], '-', color='tab: brown', label='feature1', alpha=0.5)
+ax2.plot_date(dates, df.loc[:, 'feature2'], '-', color='tab: cyan', label='feature2', alpha=0.5)
+ax.legend(['feature1', 'feature2']);
+```
 
 ##### 相間あるかどうなのか
 `corr = df['カラム名'].corr`<br>
