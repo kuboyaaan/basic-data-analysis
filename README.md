@@ -16,12 +16,20 @@
     └── 
 ```
 ### About File
-- README.md
-処理フローについて
-- code
-余裕があればpipeline作る。そのディレクトリだけは準備している
+- README.md<br>
+処理フローについて<br>
+- code<br>
+余裕があればpipeline作る。そのディレクトリだけは準備している<br>
 
 ## 分析フロー
+### Task
+- 回帰: 各データにおいて、対応する目的変数を連続値で予測するタスク<br>
+（例)土地や建物の情報が与えられ、その不動産の価値を予測するタスク<br>
+
+- 分類: 各データがどのクラスに属するかを予測するタスク<br>
+（例1）メールがスパムであるかどうかの2値分類タスク<br>
+（例2）犬の画像が与えられ、その犬種を予測するタスク（柴犬、パグ、プードル、、、）<br>
+
 ### 大前提
 ライブラリとか
 ```
@@ -42,22 +50,41 @@ pd.set_option('max_rows', 100)
 ### EDA
 #### まずは何よりデータを見てみる<br>
 ##### 読み込み
-`df = read_csv('file_path', dtype={'カラム名': データ型, ...})`
+`df = read_csv('file_path', dtype={'カラム名': データ型, ...})`<br>
+file_path: ここに読み込むcsvファイルまでのpathを記述する（tsv, .csv.zipなど様々な形式のファイルを読み込むことができる）<br>
+dtype: 各カラムの値のデータ型を指定できる<br>
+
 ##### 表示
 `df.head()`<br>
 `df.tail()`
+.head: デフォルトでレコード上位5つを表示させることができる<br>
+.tail: デフォルトでレコード下位5つを表示させることができる<br>
+↑()内に数字を指定することで表示する数を変更できる<br>
 
 ##### 何を使って、何を予測するか
-
+データを観察したり、以下から説明するメソッドを使用して、データの特徴を掴む<br>
+1. どういったデータを使用して、何を予測するのか<br>
+2. それぞれのカラムはどういった傾向があるのかなど<br>
+数値： 最大値最小値分布など<br>
+カテゴリ：最頻値unique数など<br>
+日付：トレーニング/テストデータそれぞれの期間について、周期性・日付固有のイベントの影響を受けるか（他の特徴量と合わせて確認してみる）など<br>
 
 ##### 必要であれば、連結・結合
-- 連結：`df = pd.concat([df1, df2], axis=(0: 縦方向、1: 横方向)`
-- 結合：`df = df1.merge(df2, on=['keyとなるカラム名'], how='(inner: 両方のテーブルに共通のもののみ, left: 左のテーブルにあるもののみ, right, outerなど)')`
+複数のファイルで渡されたものや、処理の過程で分割したテーブルを連結・結合する際に使用<br>
+- 連結：`df = pd.concat([df1, df2], axis=0)`<br>
+df1, df2: 連結するデータフレーム形式のデータ<br>
+axis: 0→縦方向、1→横方向<br>
+- 結合：`df = df1.merge(df2, on=['keyとなるカラム名'], how='(inner: 両方のテーブルに共通のもののみ, left: 左のテーブルにあるもののみ, right, outerなど)')`<br>
+on: ここに指定したカラムの値を用いてdf1とdf２が結合される。単数でも複数でも可<br>
+同じ意味のkeyであるがカラム名が異なる場合は、`left_on='df1のカラム名', right_on='df2のカラム名'`で指定する<br>
+how: 結合方法。inner→両方のテーブルに共通するもののみを残す。left→左のテーブル（上記だとdf1がそれに当たる）に存在するテーブルのみ残す。right→その逆。outer→両方に存在するテーブルを全て残す。<br>
 
 #### データの概要を掴む
 ##### データの型
 - 扱うデータ・各カラムはどんな型？<br>
-`df.info()` or `df.dtypes()`<br>
+`df.info()` or `df.dtypes`<br>
+df.info(): データサイズやメモリ、各カラムのデータ型などを確認<br>
+df.dtypes(): 各カラムの型を確認。`df['カラム名'].dtype`で指定カラムのみの型を確認することもできる<br>
 
 ##### 欠損あるか
 - 欠損ではない要素の数の確認<br>
@@ -65,12 +92,14 @@ pd.set_option('max_rows', 100)
 - 全体のレコードのうち有効数の割合を計算<br>
     →欠損の割合もわかる<br>
 `df.count()/len(df)`<br>
+df.count(): 有効数（欠損ではない値の数）を確認できる。<br>
+len(df): len()でサイズを計算できるので、df全体のレコード数を計算<br>
 
 ##### 要約統計量
 - 平均分散最大最小四分位数などそこらへん<br>
-    →異常値などを削除するかどうかの判断材料にもなる<br>
+    →異常値などを削除するかどうかの判断材料にもなる、かも<br>
 `df.describe()`<br>
-- 四分位数じゃ物足りないときは'percentiles'<br>
+- ↑四分位数じゃ物足りないときは'percentiles'<br>
 `df.describe(percentiles=[0.1, 0.2, ..., 0.9])`
 
 ##### データの分布
@@ -138,6 +167,14 @@ oh.fit_transform(df['カラム名'])
 
 
 ##### 時系列データの確認
+- datetime64型に変換
+```
+# datetimeに時系列情報が格納されているとする
+df['datetime'] = pd.to_datetime(df['datetime'])
+df['month'] = df['datetime'].dt.month
+...
+```
+
 - 時系列での傾向あるか
 ```
 # 可視化例
@@ -153,13 +190,24 @@ ax2.plot_date(dates, df.loc[:, 'feature2'], '-', color='tab: cyan', label='featu
 ax.legend(['feature1', 'feature2']);
 ```
 
+- 月や時間など周期的なもの
+[Qiita](https://qiita.com/shimopino/items/4ef78aa589e43f315113)を参考にしています
+```
+# 'month'カラムに1~12の値が格納されている場合
+def encode(df, col):
+    df[col + '_cos'] = np.cos(2 * np.pi * df[col]/df[col].max())
+    df[col + '_sin'] = np.sin(2 * np.pi * df[col]/df[col].max())
+    return df
+df = encode(df, 'month')
+```
+
+
 ##### 相間あるかどうなのか
 `corr = df['カラム名'].corr`<br>
 - ちなみに可視化はこんな感じ<br>
 `sns.heatmap(corr)`<br>
 
 ### Feature Engineering
-
 
 #### 欠損値
 - 欠損値の削除<br>
@@ -174,6 +222,21 @@ ax.legend(['feature1', 'feature2']);
 `df.groupby('group')['value'].mean()` <br>
 `df.groupby('group').['value'].agg(['mean])`<br>
 上記2通り方法があるが、形式が異なるので、場面場面によって使い分けが必要<br>あ
+
+### その他の特徴量操作
+- 関係のありそうなカテゴリ特徴を明示的関連づける
+```
+def make_relation(df):
+    df['relation_feature'] = list(map(lambda x, y: str(x) + '_' + str(y), df['feature1'], df['feature2']))
+
+    all_feature = list(df['relation_feature'].unique())
+    feature_map = dict(zip(all_feature, np.arange(len(all_feature))))
+
+    df['relation_category'] = df['relation_feature'].map(feature_map)
+    return df
+
+df = make_relation(df)
+```
 
 ### Modeling
 - LightGBM
