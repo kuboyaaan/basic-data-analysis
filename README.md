@@ -2,7 +2,8 @@
 データ分析のフローについて整理する用<br>
 [nejumiさんのkaggle_memo](https://github.com/nejumi/kaggle_memo)<br>
 [amatoneさんのkaggle_memo](https://github.com/amaotone/kaggle-memo)<br>
-
+[【随時更新】Kaggleテーブルデータコンペできっと役立つTipsまとめ](https://naotaka1128.hatenadiary.jp/entry/kaggle-compe-tips)<br>
+[Kaggleに登録したら次にやること ～ これだけやれば十分闘える！Titanicの先へ行く入門 10 Kernel ～](https://qiita.com/upura/items/3c10ff6fed4e7c3d70f0)<br>
 
 ## Folder structure and About File
 ### Folder structure
@@ -101,11 +102,17 @@ len(df): len()でサイズを計算できるので、df全体のレコード数�
 `df.describe()`<br>
 - ↑四分位数じゃ物足りないときは'percentiles'<br>
 `df.describe(percentiles=[0.1, 0.2, ..., 0.9])`
+- 異常値の削除はclipping
+```
+upper, lower = np.percentile(df['カラム名'], [1, 99])
+y = np.clip(df['カラム名'], upper, lower)
+```
 
 ##### データの分布
 - 正規分布？歪な分布？<br>
+スパイク見つけるためにヒストグラム書こう (これは絶対)from[ML_Bearさん](https://naotaka1128.hatenadiary.jp/entry/kaggle-compe-tips)
 `df['カラム名'].hist()`<br>
-- 対数変換かましてみる（要注意）<br>
+- 対数変換（要注意）<br>
 [Log-transform and its implications for data analysis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4120293/)<br>
 `np.log1p(df['カラム名']).hist()`<br>
 
@@ -140,7 +147,7 @@ scaler.fit_transform(data)
 
 ##### カテゴリ特徴の確認
 文字列のままでは、処理を行なっていくことができないので、数値に変換する<br>
-- ラベルエンコーディング<br>
+- Labelエンコーディング<br>
 文字列を数値に変換<br>
 ```
 from sklearn.preprocessing import LabelEncoder
@@ -162,12 +169,13 @@ oh.fit_transform(df['カラム名'])
 ...
 ```
 
-- ターゲットエンコーディング
-- ...
+- Targetエンコーディング<br>
+- Frequencyエンコーディング<br>
+...<br>
 
 
 ##### 時系列データの確認
-- datetime64型に変換
+- datetime64型に変換<br>
 ```
 # datetimeに時系列情報が格納されているとする
 df['datetime'] = pd.to_datetime(df['datetime'])
@@ -189,6 +197,18 @@ ax.plot_date(dates, df.loc[:, 'feature1'], '-', color='tab: brown', label='featu
 ax2.plot_date(dates, df.loc[:, 'feature2'], '-', color='tab: cyan', label='feature2', alpha=0.5)
 ax.legend(['feature1', 'feature2']);
 ```
+- 時系列で特徴量をづらす
+idごとにグループ化して、'target'カラムの値を'size'分づらす
+```
+size=7
+df.groupby(['id'])['target'].transform(lambda x: x.shift(size))
+```
+
+- 指定期間での平均・分散...を計算
+'size'期間での平均などの各種統計量を計算できる
+`df.groupby(['id'])['target'].transform(lambda x: x.rolling(size)['mean'])`
+'mean'の他に'std', 'max', 'min'などを計算できる
+
 
 - 月や時間など周期的なもの
 [Qiita](https://qiita.com/shimopino/items/4ef78aa589e43f315113)を参考にしています
@@ -207,6 +227,9 @@ df = encode(df, 'month')
 - ちなみに可視化はこんな感じ<br>
 `sns.heatmap(corr)`<br>
 
+##### 散布図行列
+`pd.scatter_matrix(df)`で一発で散布図行列を可視化することができる
+
 ### Feature Engineering
 
 #### 欠損値
@@ -217,11 +240,38 @@ df = encode(df, 'month')
 `df.fillna(df.['カラム名'].median())`: 中央値で補間<br>
 `df.fillna(df.['カラム名'].mode())`: 最頻値で補間<br>
 
+#### データクリーニング
+- 特徴量ゼロのカラムを消す from[ML_Bearさん](https://naotaka1128.hatenadiary.jp/entry/kaggle-compe-tips)<br>
+1種類の値しかはいっていないカラムなど<br>
+```
+remove = []
+for col in df.columns:
+    if df[col].std()==0:
+        remove.append(col)
+df.drop(remove, axis=1, inplace=True)
+```
+- （主に）時系列データにおいて、長期間0となっているデータはノイズになる可能性<br>
+需要予測では、まだ販売されていない期間など<br>
+[ASHRAEコンペ]()でもじゅうようだったぽい<br>
+```
+# コード例（もっと良い実装方法は存在するはず）
+
+df['shift_1'] = df.groupby(['id'])['target'].transform(lambda x: x.shift(1))
+df['shift_2'] = df.groupby(['id'])['target'].transform(lambda x: x.shift(2))
+...
+df['shift_n'] = df.groupby(['id'])['target'].transform(lambda x: x.shift(n))
+
+# 全部0　ではないものを取り出す
+# '~'は否定を表す
+df = df[~((df.shift_1==0) & (df.shift_2==0) ...& (df.shift_n==0))]
+```
+
 #### 集約
 - 'group'カラムの値ごとの'value'カラムの平均を計算する場合<br>
 `df.groupby('group')['value'].mean()` <br>
 `df.groupby('group').['value'].agg(['mean])`<br>
-上記2通り方法があるが、形式が異なるので、場面場面によって使い分けが必要<br>あ
+上記2通り方法があるが、形式が異なるので、場面場面によって使い分けが必要<br>
+'mean'の他にも'sum', 'count', 'max', 'min',...<br>
 
 ### その他の特徴量操作
 - 関係のありそうなカテゴリ特徴を明示的関連づける
